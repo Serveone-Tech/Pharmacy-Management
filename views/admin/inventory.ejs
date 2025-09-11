@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %></title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="/admin/dashboard">
+                <i class="fas fa-pills me-2"></i>Pharmacy Management
+            </a>
+            <div class="navbar-nav ms-auto">
+                <span class="navbar-text me-3">Welcome, <%= user.full_name %></span>
+                <a class="nav-link" href="/auth/logout">
+                    <i class="fas fa-sign-out-alt"></i> Logout
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid mt-4">
+        <div class="row">
+            <div class="col-md-12">
+                <!-- Flash Messages -->
+                <% if (success_msg && success_msg.length > 0) { %>
+                    <div class="alert alert-success alert-dismissible fade show" role="alert">
+                        <%= success_msg %>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                <% } %>
+
+                <% if (error_msg && error_msg.length > 0) { %>
+                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                        <%= error_msg %>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                <% } %>
+
+                <h2><i class="fas fa-boxes me-2"></i>Medicine Inventory</h2>
+                <p class="text-muted">Monitor stock levels and manage inventory</p>
+
+                <!-- Alerts Section -->
+                <% if (lowStockMedicines.length > 0 || expiredMedicines.length > 0) { %>
+                    <div class="row mb-4">
+                        <% if (lowStockMedicines.length > 0) { %>
+                            <div class="col-md-6">
+                                <div class="alert alert-warning" role="alert">
+                                    <h5 class="alert-heading"><i class="fas fa-exclamation-triangle me-2"></i>Low Stock Alert</h5>
+                                    <p class="mb-0"><%= lowStockMedicines.length %> medicine(s) are running low on stock.</p>
+                                </div>
+                            </div>
+                        <% } %>
+                        
+                        <% if (expiredMedicines.length > 0) { %>
+                            <div class="col-md-6">
+                                <div class="alert alert-danger" role="alert">
+                                    <h5 class="alert-heading"><i class="fas fa-calendar-times me-2"></i>Expired Medicines</h5>
+                                    <p class="mb-0"><%= expiredMedicines.length %> medicine(s) have expired.</p>
+                                </div>
+                            </div>
+                        <% } %>
+                    </div>
+                <% } %>
+
+                <!-- Tabs -->
+                <ul class="nav nav-tabs" id="inventoryTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="all-tab" data-bs-toggle="tab" data-bs-target="#all" type="button" role="tab">
+                            All Medicines (<%= medicines.length %>)
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="low-stock-tab" data-bs-toggle="tab" data-bs-target="#low-stock" type="button" role="tab">
+                            Low Stock (<%= lowStockMedicines.length %>)
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="expired-tab" data-bs-toggle="tab" data-bs-target="#expired" type="button" role="tab">
+                            Expired (<%= expiredMedicines.length %>)
+                        </button>
+                    </li>
+                </ul>
+
+                <div class="tab-content" id="inventoryTabContent">
+                    <!-- All Medicines Tab -->
+                    <div class="tab-pane fade show active" id="all" role="tabpanel">
+                        <div class="card">
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table class="table table-striped">
+                                        <thead>
+                                            <tr>
+                                                <th>Medicine Name</th>
+                                                <th>Company</th>
+                                                <th>Type</th>
+                                                <th>Current Stock</th>
+                                                <th>Min Level</th>
+                                                <th>Selling Price</th>
+                                                <th>Expiry Date</th>
+                                                <th>Status</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <% if (medicines.length > 0) { %>
+                                                <% medicines.forEach(medicine => { %>
+                                                    <tr>
+                                                        <td><strong><%= medicine.medicine_name %></strong></td>
+                                                        <td><%= medicine.company_name || 'N/A' %></td>
+                                                        <td><span class="badge bg-secondary"><%= medicine.medicine_type %></span></td>
+                                                        <td>
+                                                            <span class="badge <%= medicine.quantity_in_stock <= medicine.min_stock_level ? 'bg-danger' : 'bg-success' %>">
+                                                                <%= medicine.quantity_in_stock %>
+                                                            </span>
+                                                        </td>
+                                                        <td><%= medicine.min_stock_level %></td>
+                                                        <td>₹<%= medicine.selling_price %></td>
+                                                        <td>
+                                                            <% if (medicine.expiry_date) { %>
+                                                                <% const expiryDate = new Date(medicine.expiry_date); %>
+                                                                <% const today = new Date(); %>
+                                                                <% const isExpired = expiryDate < today; %>
+                                                                <span class="<%= isExpired ? 'text-danger' : '' %>">
+                                                                    <%= expiryDate.toLocaleDateString() %>
+                                                                </span>
+                                                            <% } else { %>
+                                                                N/A
+                                                            <% } %>
+                                                        </td>
+                                                        <td>
+                                                            <% if (medicine.quantity_in_stock <= medicine.min_stock_level) { %>
+                                                                <span class="badge bg-warning">Low Stock</span>
+                                                            <% } else { %>
+                                                                <span class="badge bg-success">In Stock</span>
+                                                            <% } %>
+                                                        </td>
+                                                    </tr>
+                                                <% }); %>
+                                            <% } else { %>
+                                                <tr>
+                                                    <td colspan="8" class="text-center text-muted">No medicines found</td>
+                                                </tr>
+                                            <% } %>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Low Stock Tab -->
+                    <div class="tab-pane fade" id="low-stock" role="tabpanel">
+                        <div class="card">
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table class="table table-striped">
+                                        <thead>
+                                            <tr>
+                                                <th>Medicine Name</th>
+                                                <th>Company</th>
+                                                <th>Current Stock</th>
+                                                <th>Min Level</th>
+                                                <th>Shortage</th>
+                                                <th>Selling Price</th>
+                                                <th>Action Required</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <% if (lowStockMedicines.length > 0) { %>
+                                                <% lowStockMedicines.forEach(medicine => { %>
+                                                    <tr>
+                                                        <td><strong><%= medicine.medicine_name %></strong></td>
+                                                        <td><%= medicine.company_name || 'N/A' %></td>
+                                                        <td><span class="badge bg-danger"><%= medicine.quantity_in_stock %></span></td>
+                                                        <td><%= medicine.min_stock_level %></td>
+                                                        <td><span class="text-danger"><%= medicine.min_stock_level - medicine.quantity_in_stock %></span></td>
+                                                        <td>₹<%= medicine.selling_price %></td>
+                                                        <td><span class="badge bg-warning">Restock Required</span></td>
+                                                    </tr>
+                                                <% }); %>
+                                            <% } else { %>
+                                                <tr>
+                                                    <td colspan="7" class="text-center text-success">All medicines are adequately stocked</td>
+                                                </tr>
+                                            <% } %>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Expired Tab -->
+                    <div class="tab-pane fade" id="expired" role="tabpanel">
+                        <div class="card">
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table class="table table-striped">
+                                        <thead>
+                                            <tr>
+                                                <th>Medicine Name</th>
+                                                <th>Company</th>
+                                                <th>Batch Number</th>
+                                                <th>Expiry Date</th>
+                                                <th>Current Stock</th>
+                                                <th>Value Lost</th>
+                                                <th>Action Required</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <% if (expiredMedicines.length > 0) { %>
+                                                <% expiredMedicines.forEach(medicine => { %>
+                                                    <tr>
+                                                        <td><strong><%= medicine.medicine_name %></strong></td>
+                                                        <td><%= medicine.company_name || 'N/A' %></td>
+                                                        <td><%= medicine.batch_number || 'N/A' %></td>
+                                                        <td><span class="text-danger"><%= new Date(medicine.expiry_date).toLocaleDateString() %></span></td>
+                                                        <td><%= medicine.quantity_in_stock %></td>
+                                                        <td class="text-danger">₹<%= (medicine.quantity_in_stock * medicine.buying_price).toFixed(2) %></td>
+                                                        <td><span class="badge bg-danger">Remove from Stock</span></td>
+                                                    </tr>
+                                                <% }); %>
+                                            <% } else { %>
+                                                <tr>
+                                                    <td colspan="7" class="text-center text-success">No expired medicines found</td>
+                                                </tr>
+                                            <% } %>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
+

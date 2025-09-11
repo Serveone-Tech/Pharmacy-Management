@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %></title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-success">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="/pharmacist/dashboard">
+                <i class="fas fa-pills me-2"></i>Pharmacy Management
+            </a>
+            <div class="navbar-nav ms-auto">
+                <span class="navbar-text me-3">Welcome, <%= user.full_name %></span>
+                <a class="nav-link" href="/auth/logout">
+                    <i class="fas fa-sign-out-alt"></i> Logout
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid mt-4">
+        <div class="row">
+            <div class="col-md-12">
+                <!-- Flash Messages -->
+                <% if (success_msg && success_msg.length > 0) { %>
+                    <div class="alert alert-success alert-dismissible fade show" role="alert">
+                        <%= success_msg %>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                <% } %>
+
+                <% if (error_msg && error_msg.length > 0) { %>
+                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                        <%= error_msg %>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                <% } %>
+
+                <h2><i class="fas fa-boxes me-2"></i>Medicine Inventory</h2>
+                <p class="text-muted">Check available stock and medicine details</p>
+
+                <!-- Search and Filter -->
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="fas fa-search"></i></span>
+                                    <input type="text" class="form-control" id="searchInput" 
+                                           placeholder="Search medicines...">
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <select class="form-select" id="stockFilter">
+                                    <option value="">All Stock Levels</option>
+                                    <option value="in_stock">In Stock</option>
+                                    <option value="low_stock">Low Stock</option>
+                                    <option value="out_of_stock">Out of Stock</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <select class="form-select" id="typeFilter">
+                                    <option value="">All Types</option>
+                                    <option value="tablet">Tablet</option>
+                                    <option value="capsule">Capsule</option>
+                                    <option value="syrup">Syrup</option>
+                                    <option value="injection">Injection</option>
+                                    <option value="cream">Cream</option>
+                                    <option value="drops">Drops</option>
+                                    <option value="other">Other</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Low Stock Alert -->
+                <% if (lowStockMedicines.length > 0) { %>
+                <div class="alert alert-warning" role="alert">
+                    <h5 class="alert-heading"><i class="fas fa-exclamation-triangle me-2"></i>Low Stock Alert!</h5>
+                    <p class="mb-0"><%= lowStockMedicines.length %> medicine(s) are running low on stock.</p>
+                </div>
+                <% } %>
+
+                <!-- Inventory Table -->
+                <div class="card">
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-striped" id="inventoryTable">
+                                <thead>
+                                    <tr>
+                                        <th>Medicine Name</th>
+                                        <th>Generic Name</th>
+                                        <th>Company</th>
+                                        <th>Type</th>
+                                        <th>Current Stock</th>
+                                        <th>Min Level</th>
+                                        <th>Selling Price</th>
+                                        <th>Expiry Date</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <% if (medicines.length > 0) { %>
+                                        <% medicines.forEach(medicine => { %>
+                                            <tr data-medicine-name="<%= medicine.medicine_name.toLowerCase() %>" 
+                                                data-medicine-type="<%= medicine.medicine_type %>"
+                                                data-stock-status="<%= medicine.quantity_in_stock <= 0 ? 'out_of_stock' : (medicine.quantity_in_stock <= medicine.min_stock_level ? 'low_stock' : 'in_stock') %>">
+                                                <td>
+                                                    <strong><%= medicine.medicine_name %></strong>
+                                                    <% if (medicine.batch_number) { %>
+                                                        <br><small class="text-muted">Batch: <%= medicine.batch_number %></small>
+                                                    <% } %>
+                                                </td>
+                                                <td><%= medicine.generic_name || 'N/A' %></td>
+                                                <td><%= medicine.company_name || 'N/A' %></td>
+                                                <td><span class="badge bg-secondary"><%= medicine.medicine_type %></span></td>
+                                                <td>
+                                                    <% if (medicine.quantity_in_stock <= 0) { %>
+                                                        <span class="badge bg-danger">0</span>
+                                                    <% } else if (medicine.quantity_in_stock <= medicine.min_stock_level) { %>
+                                                        <span class="badge bg-warning text-dark"><%= medicine.quantity_in_stock %></span>
+                                                    <% } else { %>
+                                                        <span class="badge bg-success"><%= medicine.quantity_in_stock %></span>
+                                                    <% } %>
+                                                </td>
+                                                <td><%= medicine.min_stock_level %></td>
+                                                <td><strong>₹<%= medicine.selling_price %></strong></td>
+                                                <td>
+                                                    <% if (medicine.expiry_date) { %>
+                                                        <% const expiryDate = new Date(medicine.expiry_date); %>
+                                                        <% const today = new Date(); %>
+                                                        <% const isExpired = expiryDate < today; %>
+                                                        <% const isExpiringSoon = !isExpired && (expiryDate - today) / (1000 * 60 * 60 * 24) <= 30; %>
+                                                        <span class="<%= isExpired ? 'text-danger' : (isExpiringSoon ? 'text-warning' : '') %>">
+                                                            <%= expiryDate.toLocaleDateString() %>
+                                                        </span>
+                                                        <% if (isExpired) { %>
+                                                            <br><small class="text-danger">Expired</small>
+                                                        <% } else if (isExpiringSoon) { %>
+                                                            <br><small class="text-warning">Expiring Soon</small>
+                                                        <% } %>
+                                                    <% } else { %>
+                                                        N/A
+                                                    <% } %>
+                                                </td>
+                                                <td>
+                                                    <% if (medicine.quantity_in_stock <= 0) { %>
+                                                        <span class="badge bg-danger">Out of Stock</span>
+                                                    <% } else if (medicine.quantity_in_stock <= medicine.min_stock_level) { %>
+                                                        <span class="badge bg-warning">Low Stock</span>
+                                                    <% } else { %>
+                                                        <span class="badge bg-success">In Stock</span>
+                                                    <% } %>
+                                                </td>
+                                            </tr>
+                                        <% }); %>
+                                    <% } else { %>
+                                        <tr>
+                                            <td colspan="9" class="text-center text-muted">No medicines found</td>
+                                        </tr>
+                                    <% } %>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Summary Cards -->
+                <div class="row mt-4">
+                    <div class="col-md-3">
+                        <div class="card bg-primary text-white">
+                            <div class="card-body text-center">
+                                <h4 id="totalMedicines"><%= medicines.length %></h4>
+                                <p class="mb-0">Total Medicines</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card bg-success text-white">
+                            <div class="card-body text-center">
+                                <h4 id="inStockCount"><%= medicines.filter(m => m.quantity_in_stock > m.min_stock_level).length %></h4>
+                                <p class="mb-0">In Stock</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card bg-warning text-dark">
+                            <div class="card-body text-center">
+                                <h4 id="lowStockCount"><%= lowStockMedicines.length %></h4>
+                                <p class="mb-0">Low Stock</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card bg-danger text-white">
+                            <div class="card-body text-center">
+                                <h4 id="outOfStockCount"><%= medicines.filter(m => m.quantity_in_stock <= 0).length %></h4>
+                                <p class="mb-0">Out of Stock</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Search and filter functionality
+        const searchInput = document.getElementById('searchInput');
+        const stockFilter = document.getElementById('stockFilter');
+        const typeFilter = document.getElementById('typeFilter');
+        const tableRows = document.querySelectorAll('#inventoryTable tbody tr:not(:last-child)');
+
+        function filterTable() {
+            const searchTerm = searchInput.value.toLowerCase();
+            const stockFilterValue = stockFilter.value;
+            const typeFilterValue = typeFilter.value;
+            
+            let visibleCount = 0;
+            
+            tableRows.forEach(row => {
+                const medicineName = row.dataset.medicineName || '';
+                const medicineType = row.dataset.medicineType || '';
+                const stockStatus = row.dataset.stockStatus || '';
+                
+                const matchesSearch = medicineName.includes(searchTerm);
+                const matchesStock = !stockFilterValue || stockStatus === stockFilterValue;
+                const matchesType = !typeFilterValue || medicineType === typeFilterValue;
+                
+                if (matchesSearch && matchesStock && matchesType) {
+                    row.style.display = '';
+                    visibleCount++;
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+            
+            // Update summary if needed
+            updateSummary(visibleCount);
+        }
+
+        function updateSummary(visibleCount) {
+            // You can update summary cards based on visible items if needed
+        }
+
+        // Event listeners
+        searchInput.addEventListener('input', filterTable);
+        stockFilter.addEventListener('change', filterTable);
+        typeFilter.addEventListener('change', filterTable);
+
+        // Auto-refresh every 30 seconds to get updated stock levels
+        setInterval(() => {
+            if (document.visibilityState === 'visible') {
+                location.reload();
+            }
+        }, 30000);
+    </script>
+</body>
+</html>
+

@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %></title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-success">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="/pharmacist/dashboard">
+                <i class="fas fa-pills me-2"></i>Pharmacy Management
+            </a>
+            <div class="navbar-nav ms-auto">
+                <span class="navbar-text me-3">Welcome, <%= user.full_name %></span>
+                <a class="nav-link" href="/auth/logout">
+                    <i class="fas fa-sign-out-alt"></i> Logout
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid mt-4">
+        <div class="row">
+            <div class="col-md-12">
+                <!-- Flash Messages -->
+                <% if (success_msg && success_msg.length > 0) { %>
+                    <div class="alert alert-success alert-dismissible fade show" role="alert">
+                        <%= success_msg %>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                <% } %>
+
+                <% if (error_msg && error_msg.length > 0) { %>
+                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                        <%= error_msg %>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                <% } %>
+
+                <h2><i class="fas fa-file-invoice me-2"></i>Invoice Search</h2>
+                <p class="text-muted">Search and view your invoices</p>
+
+                <!-- Search Form -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5><i class="fas fa-search me-2"></i>Search Invoices</h5>
+                    </div>
+                    <div class="card-body">
+                        <form method="GET" action="/pharmacist/invoices">
+                            <div class="row">
+                                <div class="col-md-8">
+                                    <div class="input-group">
+                                        <span class="input-group-text"><i class="fas fa-search"></i></span>
+                                        <input type="text" class="form-control" name="search" 
+                                               placeholder="Search by invoice number or customer mobile..." 
+                                               value="<%= search %>">
+                                        <button class="btn btn-primary" type="submit">
+                                            <i class="fas fa-search me-2"></i>Search
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <a href="/pharmacist/invoices" class="btn btn-outline-secondary">
+                                        <i class="fas fa-refresh me-2"></i>Show Recent
+                                    </a>
+                                    <a href="/pharmacist/sales" class="btn btn-success">
+                                        <i class="fas fa-plus me-2"></i>New Sale
+                                    </a>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Invoices Table -->
+                <div class="card">
+                    <div class="card-header">
+                        <h5><i class="fas fa-list me-2"></i>
+                            <% if (search) { %>
+                                Search Results for "<%= search %>"
+                            <% } else { %>
+                                Recent Invoices
+                            <% } %>
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>Invoice #</th>
+                                        <th>Date</th>
+                                        <th>Customer</th>
+                                        <th>Mobile</th>
+                                        <th>Total Amount</th>
+                                        <th>Payment Method</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <% if (invoices.length > 0) { %>
+                                        <% invoices.forEach(invoice => { %>
+                                            <tr>
+                                                <td>
+                                                    <strong><%= invoice.invoice_number %></strong>
+                                                </td>
+                                                <td>
+                                                    <%= new Date(invoice.invoice_date).toLocaleDateString() %>
+                                                    <br>
+                                                    <small class="text-muted">
+                                                        <%= new Date(invoice.invoice_date).toLocaleTimeString() %>
+                                                    </small>
+                                                </td>
+                                                <td>
+                                                    <%= invoice.customer_name || 'Walk-in Customer' %>
+                                                </td>
+                                                <td>
+                                                    <%= invoice.customer_mobile || 'N/A' %>
+                                                </td>
+                                                <td>
+                                                    <strong>₹<%= Number(invoice.final_amount).toFixed(2) %></strong>
+                                                    <% if (invoice.discount_amount > 0) { %>
+                                                        <br>
+                                                        <small class="text-muted">
+                                                            (₹<%= Number(invoice.total_amount).toFixed(2) %> - ₹<%= Number(invoice.discount_amount).toFixed(2) %>)
+                                                        </small>
+                                                    <% } %>
+                                                </td>
+                                                <td>
+                                                    <span class="badge bg-info">
+                                                        <%= invoice.payment_method.charAt(0).toUpperCase() + invoice.payment_method.slice(1) %>
+                                                    </span>
+                                                </td>
+                                                <td>
+                                                    <div class="btn-group" role="group">
+                                                        <a href="/pharmacist/invoices/<%= invoice.id %>" 
+                                                           class="btn btn-sm btn-outline-primary" 
+                                                           title="View Details">
+                                                            <i class="fas fa-eye"></i>
+                                                        </a>
+                                                        <button class="btn btn-sm btn-outline-success" 
+                                                                onclick="printInvoice(<%= invoice.id %>)" 
+                                                                title="Print">
+                                                            <i class="fas fa-print"></i>
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        <% }); %>
+                                    <% } else { %>
+                                        <tr>
+                                            <td colspan="7" class="text-center text-muted py-4">
+                                                <i class="fas fa-file-invoice fa-3x mb-3 d-block"></i>
+                                                <% if (search) { %>
+                                                    No invoices found matching your search criteria
+                                                <% } else { %>
+                                                    No invoices found
+                                                <% } %>
+                                            </td>
+                                        </tr>
+                                    <% } %>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <% if (invoices.length > 0) { %>
+                <!-- Summary Cards -->
+                <div class="row mt-4">
+                    <div class="col-md-4">
+                        <div class="card bg-primary text-white">
+                            <div class="card-body text-center">
+                                <h4><%= invoices.length %></h4>
+                                <p class="mb-0">
+                                    <% if (search) { %>
+                                        Found Invoices
+                                    <% } else { %>
+                                        Recent Invoices
+                                    <% } %>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card bg-success text-white">
+                            <div class="card-body text-center">
+                                <h4>₹<%= Number(invoices.reduce((sum, inv) => sum + inv.final_amount, 0)).toFixed(2) %></h4>
+                                <p class="mb-0">Total Value</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card bg-info text-white">
+                            <div class="card-body text-center">
+                                <h4>₹<%= Number((invoices.reduce((sum, inv) => sum + inv.final_amount, 0) / invoices.length)).toFixed(2) %></h4>
+                                <p class="mb-0">Average Value</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <% } %>
+
+                <!-- Quick Actions -->
+                <div class="row mt-4">
+                    <div class="col-md-12">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5><i class="fas fa-bolt me-2"></i>Quick Actions</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-3 mb-2">
+                                        <a href="/pharmacist/sales" class="btn btn-success w-100">
+                                            <i class="fas fa-plus d-block mb-1"></i>
+                                            Create New Invoice
+                                        </a>
+                                    </div>
+                                    <div class="col-md-3 mb-2">
+                                        <a href="/pharmacist/reports" class="btn btn-outline-primary w-100">
+                                            <i class="fas fa-chart-bar d-block mb-1"></i>
+                                            Sales Reports
+                                        </a>
+                                    </div>
+                                    <div class="col-md-3 mb-2">
+                                        <a href="/pharmacist/inventory" class="btn btn-outline-info w-100">
+                                            <i class="fas fa-boxes d-block mb-1"></i>
+                                            Check Inventory
+                                        </a>
+                                    </div>
+                                    <div class="col-md-3 mb-2">
+                                        <a href="/pharmacist/dashboard" class="btn btn-outline-secondary w-100">
+                                            <i class="fas fa-tachometer-alt d-block mb-1"></i>
+                                            Dashboard
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function printInvoice(invoiceId) {
+            // Open invoice in new window for printing
+            const printWindow = window.open(`/pharmacist/invoices/${invoiceId}?print=1`, '_blank');
+            
+            // Wait for the window to load, then trigger print
+            printWindow.onload = function() {
+                setTimeout(() => {
+                    printWindow.print();
+                }, 500);
+            };
+        }
+
+        // Auto-focus search input if present
+        const searchInput = document.querySelector('input[name="search"]');
+        if (searchInput && !searchInput.value) {
+            searchInput.focus();
+        }
+
+        // Add keyboard shortcut for new sale (Ctrl+N)
+        document.addEventListener('keydown', function(e) {
+            if (e.ctrlKey && e.key === 'n') {
+                e.preventDefault();
+                window.location.href = '/pharmacist/sales';
+            }
+        });
+    </script>
+</body>
+</html>
+

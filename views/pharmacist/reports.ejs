@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %></title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-success">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="/pharmacist/dashboard">
+                <i class="fas fa-pills me-2"></i>Pharmacy Management
+            </a>
+            <div class="navbar-nav ms-auto">
+                <span class="navbar-text me-3">Welcome, <%= user.full_name %></span>
+                <a class="nav-link" href="/auth/logout">
+                    <i class="fas fa-sign-out-alt"></i> Logout
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid mt-4">
+        <div class="row">
+            <div class="col-md-12">
+                <!-- Flash Messages -->
+                <% if (success_msg && success_msg.length > 0) { %>
+                    <div class="alert alert-success alert-dismissible fade show" role="alert">
+                        <%= success_msg %>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                <% } %>
+
+                <% if (error_msg && error_msg.length > 0) { %>
+                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                        <%= error_msg %>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                <% } %>
+
+                <h2><i class="fas fa-chart-bar me-2"></i>My Sales Reports</h2>
+                <p class="text-muted">View your sales performance and history</p>
+
+                <!-- Filter Form -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5><i class="fas fa-filter me-2"></i>Report Filters</h5>
+                    </div>
+                    <div class="card-body">
+                        <form method="GET" action="/pharmacist/reports">
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <div class="mb-3">
+                                        <label for="date_from" class="form-label">From Date</label>
+                                        <input type="date" class="form-control" id="date_from" name="date_from" 
+                                               value="<%= filters.date_from || '' %>">
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="mb-3">
+                                        <label for="date_to" class="form-label">To Date</label>
+                                        <input type="date" class="form-control" id="date_to" name="date_to" 
+                                               value="<%= filters.date_to || '' %>">
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="mb-3">
+                                        <label class="form-label">&nbsp;</label>
+                                        <div class="d-grid">
+                                            <button type="submit" class="btn btn-primary">
+                                                <i class="fas fa-chart-line me-2"></i>Generate Report
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <% if (filters.date_from && filters.date_to) { %>
+                    <!-- Summary Cards -->
+                    <div class="row mb-4">
+                        <div class="col-md-4">
+                            <div class="card bg-primary text-white">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between">
+                                        <div>
+                                            <h4><%= totalStats.total_invoices %></h4>
+                                            <p class="mb-0">Total Invoices</p>
+                                        </div>
+                                        <div class="align-self-center">
+                                            <i class="fas fa-file-invoice fa-2x"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card bg-success text-white">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between">
+                                        <div>
+                                            <h4>₹<%= totalStats.total_sales.toFixed(2) %></h4>
+                                            <p class="mb-0">Total Sales</p>
+                                        </div>
+                                        <div class="align-self-center">
+                                            <i class="fas fa-rupee-sign fa-2x"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card bg-info text-white">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between">
+                                        <div>
+                                            <h4>₹<%= totalStats.average_sale.toFixed(2) %></h4>
+                                            <p class="mb-0">Average Sale</p>
+                                        </div>
+                                        <div class="align-self-center">
+                                            <i class="fas fa-chart-line fa-2x"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Daily Sales Report -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h5><i class="fas fa-calendar-alt me-2"></i>Daily Sales Report</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-striped">
+                                    <thead>
+                                        <tr>
+                                            <th>Date</th>
+                                            <th>Total Invoices</th>
+                                            <th>Total Sales</th>
+                                            <th>Average Sale</th>
+                                            <th>Performance</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <% if (salesData.length > 0) { %>
+                                            <% salesData.forEach(day => { %>
+                                                <tr>
+                                                    <td>
+                                                        <strong><%= new Date(day.sale_date).toLocaleDateString() %></strong>
+                                                        <br>
+                                                        <small class="text-muted">
+                                                            <%= new Date(day.sale_date).toLocaleDateString('en-US', { weekday: 'long' }) %>
+                                                        </small>
+                                                    </td>
+                                                    <td>
+                                                        <span class="badge bg-primary"><%= day.total_invoices %></span>
+                                                    </td>
+                                                    <td>
+                                                        <strong>₹<%= day.total_sales.toFixed(2) %></strong>
+                                                    </td>
+                                                    <td>
+                                                        ₹<%= (day.total_sales / day.total_invoices).toFixed(2) %>
+                                                    </td>
+                                                    <td>
+                                                        <% const performance = day.total_sales; %>
+                                                        <% if (performance >= 5000) { %>
+                                                            <span class="badge bg-success">Excellent</span>
+                                                        <% } else if (performance >= 2000) { %>
+                                                            <span class="badge bg-info">Good</span>
+                                                        <% } else if (performance >= 500) { %>
+                                                            <span class="badge bg-warning">Average</span>
+                                                        <% } else { %>
+                                                            <span class="badge bg-secondary">Low</span>
+                                                        <% } %>
+                                                    </td>
+                                                </tr>
+                                            <% }); %>
+                                        <% } else { %>
+                                            <tr>
+                                                <td colspan="5" class="text-center text-muted">No sales data found for the selected period</td>
+                                            </tr>
+                                        <% } %>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                <% } else { %>
+                    <div class="card">
+                        <div class="card-body text-center">
+                            <i class="fas fa-chart-bar fa-3x text-muted mb-3"></i>
+                            <h5>Select Date Range to Generate Report</h5>
+                            <p class="text-muted">Please select a date range to generate your sales reports and view performance metrics.</p>
+                            
+                            <!-- Quick Date Range Buttons -->
+                            <div class="row mt-4">
+                                <div class="col-md-3 mb-2">
+                                    <button class="btn btn-outline-primary w-100" onclick="setDateRange('today')">
+                                        <i class="fas fa-calendar-day d-block mb-1"></i>
+                                        Today
+                                    </button>
+                                </div>
+                                <div class="col-md-3 mb-2">
+                                    <button class="btn btn-outline-primary w-100" onclick="setDateRange('yesterday')">
+                                        <i class="fas fa-calendar-minus d-block mb-1"></i>
+                                        Yesterday
+                                    </button>
+                                </div>
+                                <div class="col-md-3 mb-2">
+                                    <button class="btn btn-outline-primary w-100" onclick="setDateRange('week')">
+                                        <i class="fas fa-calendar-week d-block mb-1"></i>
+                                        Last 7 Days
+                                    </button>
+                                </div>
+                                <div class="col-md-3 mb-2">
+                                    <button class="btn btn-outline-primary w-100" onclick="setDateRange('month')">
+                                        <i class="fas fa-calendar-alt d-block mb-1"></i>
+                                        Last 30 Days
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                <% } %>
+
+                <!-- Quick Actions -->
+                <div class="row mt-4">
+                    <div class="col-md-12">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5><i class="fas fa-bolt me-2"></i>Quick Actions</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-3 mb-2">
+                                        <a href="/pharmacist/sales" class="btn btn-success w-100">
+                                            <i class="fas fa-plus d-block mb-1"></i>
+                                            New Sale
+                                        </a>
+                                    </div>
+                                    <div class="col-md-3 mb-2">
+                                        <a href="/pharmacist/invoices" class="btn btn-outline-primary w-100">
+                                            <i class="fas fa-file-invoice d-block mb-1"></i>
+                                            View Invoices
+                                        </a>
+                                    </div>
+                                    <div class="col-md-3 mb-2">
+                                        <a href="/pharmacist/inventory" class="btn btn-outline-info w-100">
+                                            <i class="fas fa-boxes d-block mb-1"></i>
+                                            Check Inventory
+                                        </a>
+                                    </div>
+                                    <div class="col-md-3 mb-2">
+                                        <a href="/pharmacist/dashboard" class="btn btn-outline-secondary w-100">
+                                            <i class="fas fa-tachometer-alt d-block mb-1"></i>
+                                            Dashboard
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function setDateRange(range) {
+            const today = new Date();
+            const dateFrom = document.getElementById('date_from');
+            const dateTo = document.getElementById('date_to');
+            
+            // Set end date to today
+            dateTo.value = today.toISOString().split('T')[0];
+            
+            let startDate = new Date();
+            
+            switch(range) {
+                case 'today':
+                    startDate = new Date();
+                    break;
+                case 'yesterday':
+                    startDate = new Date();
+                    startDate.setDate(startDate.getDate() - 1);
+                    dateTo.value = startDate.toISOString().split('T')[0];
+                    break;
+                case 'week':
+                    startDate = new Date();
+                    startDate.setDate(startDate.getDate() - 7);
+                    break;
+                case 'month':
+                    startDate = new Date();
+                    startDate.setDate(startDate.getDate() - 30);
+                    break;
+            }
+            
+            dateFrom.value = startDate.toISOString().split('T')[0];
+            
+            // Auto-submit the form
+            document.querySelector('form').submit();
+        }
+
+        // Set max date to today for date inputs
+        const today = new Date().toISOString().split('T')[0];
+        document.getElementById('date_from').max = today;
+        document.getElementById('date_to').max = today;
+        
+        // Ensure from date is not after to date
+        document.getElementById('date_from').addEventListener('change', function() {
+            const fromDate = this.value;
+            const toDate = document.getElementById('date_to').value;
+            
+            if (fromDate && toDate && fromDate > toDate) {
+                document.getElementById('date_to').value = fromDate;
+            }
+        });
+        
+        document.getElementById('date_to').addEventListener('change', function() {
+            const toDate = this.value;
+            const fromDate = document.getElementById('date_from').value;
+            
+            if (fromDate && toDate && fromDate > toDate) {
+                document.getElementById('date_from').value = toDate;
+            }
+        });
+    </script>
+</body>
+</html>
+

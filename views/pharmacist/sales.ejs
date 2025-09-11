@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %></title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-success">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="/pharmacist/dashboard">
+                <i class="fas fa-pills me-2"></i>Pharmacy Management
+            </a>
+            <div class="navbar-nav ms-auto">
+                <span class="navbar-text me-3">Welcome, <%= user.full_name %></span>
+                <a class="nav-link" href="/auth/logout">
+                    <i class="fas fa-sign-out-alt"></i> Logout
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid mt-4">
+        <div class="row">
+            <div class="col-md-8">
+                <div class="card">
+                    <div class="card-header">
+                        <h5><i class="fas fa-search me-2"></i>Search & Add Medicines</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <input type="text" class="form-control" id="medicineSearch" 
+                                   placeholder="Search medicine by name..." autocomplete="off">
+                            <div id="searchResults" class="mt-2"></div>
+                        </div>
+                        
+                        <div id="selectedMedicines" class="mt-4">
+                            <h6>Selected Medicines:</h6>
+                            <div class="table-responsive">
+                                <table class="table table-sm">
+                                    <thead>
+                                        <tr>
+                                            <th>Medicine</th>
+                                            <th>Price</th>
+                                            <th>Qty</th>
+                                            <th>Total</th>
+                                            <th>Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="cartItems">
+                                        <tr id="emptyCart">
+                                            <td colspan="5" class="text-center text-muted">No medicines selected</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h5><i class="fas fa-calculator me-2"></i>Invoice Summary</h5>
+                    </div>
+                    <div class="card-body">
+                        <form id="invoiceForm">
+                            <div class="mb-3">
+                                <label for="customerName" class="form-label">Customer Name</label>
+                                <input type="text" class="form-control" id="customerName" name="customer_name">
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="customerMobile" class="form-label">Customer Mobile</label>
+                                <input type="tel" class="form-control" id="customerMobile" name="customer_mobile">
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="customerAddress" class="form-label">Customer Address</label>
+                                <textarea class="form-control" id="customerAddress" name="customer_address" rows="2"></textarea>
+                            </div>
+                            
+                            <hr>
+                            
+                            <div class="mb-2">
+                                <div class="d-flex justify-content-between">
+                                    <span>Subtotal:</span>
+                                    <span id="subtotal">₹0.00</span>
+                                </div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="discount" class="form-label">Discount Amount</label>
+                                <input type="number" class="form-control" id="discount" name="discount_amount" 
+                                       value="0" min="0" step="0.01">
+                            </div>
+                            
+                            <div class="mb-3">
+                                <div class="d-flex justify-content-between">
+                                    <strong>Total Amount:</strong>
+                                    <strong id="totalAmount">₹0.00</strong>
+                                </div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="paymentMethod" class="form-label">Payment Method</label>
+                                <select class="form-select" id="paymentMethod" name="payment_method">
+                                    <option value="cash">Cash</option>
+                                    <option value="card">Card</option>
+                                    <option value="upi">UPI</option>
+                                    <option value="other">Other</option>
+                                </select>
+                            </div>
+                            
+                            <div class="d-grid gap-2">
+                                <button type="button" class="btn btn-success" id="createInvoice" disabled>
+                                    <i class="fas fa-file-invoice me-2"></i>Create Invoice
+                                </button>
+                                <button type="button" class="btn btn-outline-secondary" id="clearCart">
+                                    <i class="fas fa-trash me-2"></i>Clear Cart
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Success Modal -->
+    <div class="modal fade" id="successModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-success text-white">
+                    <h5 class="modal-title">Invoice Created Successfully</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body text-center">
+                    <i class="fas fa-check-circle fa-3x text-success mb-3"></i>
+                    <h5 id="invoiceNumber"></h5>
+                    <p class="text-muted">Invoice has been created successfully</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-primary" id="viewInvoice">
+                        <i class="fas fa-eye me-2"></i>View Invoice
+                    </button>
+                    <button type="button" class="btn btn-success" id="newSale">
+                        <i class="fas fa-plus me-2"></i>New Sale
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        let cart = [];
+        let searchTimeout;
+
+        // Medicine search functionality
+        document.getElementById('medicineSearch').addEventListener('input', function() {
+            const query = this.value.trim();
+            
+            clearTimeout(searchTimeout);
+            
+            if (query.length < 2) {
+                document.getElementById('searchResults').innerHTML = '';
+                return;
+            }
+            
+            searchTimeout = setTimeout(() => {
+                fetch(`/pharmacist/api/medicines/search?q=${encodeURIComponent(query)}`)
+                    .then(response => response.json())
+                    .then(medicines => {
+                        displaySearchResults(medicines);
+                    })
+                    .catch(error => {
+                        console.error('Search error:', error);
+                        document.getElementById('searchResults').innerHTML = 
+                            '<div class="alert alert-danger">Search failed. Please try again.</div>';
+                    });
+            }, 300);
+        });
+
+        function displaySearchResults(medicines) {
+            const resultsDiv = document.getElementById('searchResults');
+            
+            if (medicines.length === 0) {
+                resultsDiv.innerHTML = '<div class="alert alert-info">No medicines found</div>';
+                return;
+            }
+            
+            let html = '<div class="list-group">';
+            medicines.forEach(medicine => {
+                const inStock = medicine.quantity_in_stock > 0;
+                html += `
+                    <div class="list-group-item ${!inStock ? 'list-group-item-secondary' : ''}">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="mb-1">${medicine.medicine_name}</h6>
+                                <small class="text-muted">${medicine.company_name || 'Unknown Company'} | 
+                                Stock: ${medicine.quantity_in_stock} | ₹${medicine.selling_price}</small>
+                            </div>
+                            <button class="btn btn-sm btn-outline-success" 
+                                    onclick="addToCart(${medicine.id}, '${medicine.medicine_name}', ${medicine.selling_price}, ${medicine.quantity_in_stock})"
+                                    ${!inStock ? 'disabled' : ''}>
+                                <i class="fas fa-plus"></i>
+                            </button>
+                        </div>
+                    </div>
+                `;
+            });
+            html += '</div>';
+            
+            resultsDiv.innerHTML = html;
+        }
+
+        function addToCart(id, name, price, stock) {
+            const existingItem = cart.find(item => item.id === id);
+            
+            if (existingItem) {
+                if (existingItem.quantity < stock) {
+                    existingItem.quantity++;
+                    existingItem.total = existingItem.quantity * existingItem.price;
+                } else {
+                    alert('Insufficient stock');
+                    return;
+                }
+            } else {
+                cart.push({
+                    id: id,
+                    name: name,
+                    price: price,
+                    quantity: 1,
+                    total: price,
+                    stock: stock
+                });
+            }
+            
+            updateCartDisplay();
+            document.getElementById('medicineSearch').value = '';
+            document.getElementById('searchResults').innerHTML = '';
+        }
+
+        function removeFromCart(id) {
+            cart = cart.filter(item => item.id !== id);
+            updateCartDisplay();
+        }
+
+        function updateQuantity(id, newQuantity) {
+            const item = cart.find(item => item.id === id);
+            if (item) {
+                if (newQuantity > 0 && newQuantity <= item.stock) {
+                    item.quantity = newQuantity;
+                    item.total = item.quantity * item.price;
+                    updateCartDisplay();
+                } else if (newQuantity > item.stock) {
+                    alert('Insufficient stock');
+                }
+            }
+        }
+
+        function updateCartDisplay() {
+            const cartBody = document.getElementById('cartItems');
+            const emptyCart = document.getElementById('emptyCart');
+            
+            if (cart.length === 0) {
+                emptyCart.style.display = 'table-row';
+                cartBody.querySelectorAll('tr:not(#emptyCart)').forEach(row => row.remove());
+            } else {
+                emptyCart.style.display = 'none';
+                
+                // Clear existing items except empty cart row
+                cartBody.querySelectorAll('tr:not(#emptyCart)').forEach(row => row.remove());
+                
+                cart.forEach(item => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${item.name}</td>
+                        <td>₹${item.price}</td>
+                        <td>
+                            <input type="number" class="form-control form-control-sm" 
+                                   value="${item.quantity}" min="1" max="${item.stock}"
+                                   onchange="updateQuantity(${item.id}, this.value)" style="width: 70px;">
+                        </td>
+                        <td>₹${item.total.toFixed(2)}</td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-danger" onclick="removeFromCart(${item.id})">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </td>
+                    `;
+                    cartBody.appendChild(row);
+                });
+            }
+            
+            updateTotals();
+        }
+
+        function updateTotals() {
+            const subtotal = cart.reduce((sum, item) => sum + item.total, 0);
+            const discount = parseFloat(document.getElementById('discount').value) || 0;
+            const total = subtotal - discount;
+            
+            document.getElementById('subtotal').textContent = `₹${subtotal.toFixed(2)}`;
+            document.getElementById('totalAmount').textContent = `₹${total.toFixed(2)}`;
+            
+            document.getElementById('createInvoice').disabled = cart.length === 0;
+        }
+
+        // Event listeners
+        document.getElementById('discount').addEventListener('input', updateTotals);
+
+        document.getElementById('clearCart').addEventListener('click', function() {
+            if (confirm('Are you sure you want to clear the cart?')) {
+                cart = [];
+                updateCartDisplay();
+            }
+        });
+
+        document.getElementById('createInvoice').addEventListener('click', function() {
+            if (cart.length === 0) {
+                alert('Please add medicines to cart');
+                return;
+            }
+            
+            const subtotal = cart.reduce((sum, item) => sum + item.total, 0);
+            const discount = parseFloat(document.getElementById('discount').value) || 0;
+            const total = subtotal - discount;
+            
+            if (total < 0) {
+                alert('Discount cannot be greater than subtotal');
+                return;
+            }
+            
+            const invoiceData = {
+                customer_name: document.getElementById('customerName').value,
+                customer_mobile: document.getElementById('customerMobile').value,
+                customer_address: document.getElementById('customerAddress').value,
+                total_amount: subtotal,
+                discount_amount: discount,
+                final_amount: total,
+                payment_method: document.getElementById('paymentMethod').value,
+                items: cart.map(item => ({
+                    medicine_id: item.id,
+                    quantity: item.quantity,
+                    unit_price: item.price,
+                    total_price: item.total
+                }))
+            };
+            
+            this.disabled = true;
+            this.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Creating...';
+            
+            fetch('/pharmacist/sales/invoice', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(invoiceData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    document.getElementById('invoiceNumber').textContent = `Invoice #${data.invoice_number}`;
+                    document.getElementById('viewInvoice').onclick = () => {
+                        window.open(`/pharmacist/invoices/${data.invoice_id}`, '_blank');
+                    };
+                    
+                    const successModal = new bootstrap.Modal(document.getElementById('successModal'));
+                    successModal.show();
+                } else {
+                    alert('Error creating invoice: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error creating invoice. Please try again.');
+            })
+            .finally(() => {
+                this.disabled = false;
+                this.innerHTML = '<i class="fas fa-file-invoice me-2"></i>Create Invoice';
+            });
+        });
+
+        document.getElementById('newSale').addEventListener('click', function() {
+            cart = [];
+            updateCartDisplay();
+            document.getElementById('invoiceForm').reset();
+            document.getElementById('discount').value = '0';
+            updateTotals();
+            
+            const successModal = bootstrap.Modal.getInstance(document.getElementById('successModal'));
+            successModal.hide();
+        });
+    </script>
+</body>
+</html>
+

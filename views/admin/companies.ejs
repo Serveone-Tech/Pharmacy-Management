@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %></title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="/admin/dashboard">
+                <i class="fas fa-pills me-2"></i>Pharmacy Management
+            </a>
+            <div class="navbar-nav ms-auto">
+                <span class="navbar-text me-3">Welcome, <%= user.full_name %></span>
+                <a class="nav-link" href="/auth/logout">
+                    <i class="fas fa-sign-out-alt"></i> Logout
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid mt-4">
+        <div class="row">
+            <div class="col-md-12">
+                <!-- Flash Messages -->
+                <% if (success_msg && success_msg.length > 0) { %>
+                    <div class="alert alert-success alert-dismissible fade show" role="alert">
+                        <%= success_msg %>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                <% } %>
+
+                <% if (error_msg && error_msg.length > 0) { %>
+                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                        <%= error_msg %>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                <% } %>
+
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <div>
+                        <h2><i class="fas fa-building me-2"></i>Manage Companies</h2>
+                        <p class="text-muted">Add and manage pharmaceutical companies</p>
+                    </div>
+                    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addCompanyModal">
+                        <i class="fas fa-plus me-2"></i>Add Company
+                    </button>
+                </div>
+
+                <div class="card">
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>Company Name</th>
+                                        <th>Contact Person</th>
+                                        <th>Email</th>
+                                        <th>Phone</th>
+                                        <th>Medicines</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <% if (companies.length > 0) { %>
+                                        <% companies.forEach(company => { %>
+                                            <tr>
+                                                <td><strong><%= company.company_name %></strong></td>
+                                                <td><%= company.contact_person || 'N/A' %></td>
+                                                <td><%= company.company_email || 'N/A' %></td>
+                                                <td><%= company.company_phone || 'N/A' %></td>
+                                                <td><span class="badge bg-info"><%= company.medicine_count %> medicines</span></td>
+                                                <td>
+                                                    <button type="button" class="btn btn-sm btn-outline-primary" 
+                                                            onclick="editCompany(<%= company.id %>, '<%= company.company_name %>', '<%= company.contact_person || '' %>', '<%= company.company_email || '' %>', '<%= company.company_phone || '' %>', '<%= company.company_address || '' %>')">
+                                                        <i class="fas fa-edit"></i>
+                                                    </button>
+                                                    <form method="POST" action="/admin/companies/<%= company.id %>/delete" class="d-inline" 
+                                                          onsubmit="return confirm('Are you sure you want to delete this company?')">
+                                                        <button type="submit" class="btn btn-sm btn-outline-danger">
+                                                            <i class="fas fa-trash"></i>
+                                                        </button>
+                                                    </form>
+                                                </td>
+                                            </tr>
+                                        <% }); %>
+                                    <% } else { %>
+                                        <tr>
+                                            <td colspan="6" class="text-center text-muted">No companies found</td>
+                                        </tr>
+                                    <% } %>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Company Modal -->
+    <div class="modal fade" id="addCompanyModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Add New Company</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <form method="POST" action="/admin/companies">
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label for="company_name" class="form-label">Company Name *</label>
+                            <input type="text" class="form-control" id="company_name" name="company_name" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="contact_person" class="form-label">Contact Person</label>
+                            <input type="text" class="form-control" id="contact_person" name="contact_person">
+                        </div>
+                        <div class="mb-3">
+                            <label for="company_email" class="form-label">Email</label>
+                            <input type="email" class="form-control" id="company_email" name="company_email">
+                        </div>
+                        <div class="mb-3">
+                            <label for="company_phone" class="form-label">Phone</label>
+                            <input type="tel" class="form-control" id="company_phone" name="company_phone">
+                        </div>
+                        <div class="mb-3">
+                            <label for="company_address" class="form-label">Address</label>
+                            <textarea class="form-control" id="company_address" name="company_address" rows="3"></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Add Company</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Company Modal -->
+    <div class="modal fade" id="editCompanyModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Edit Company</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <form method="POST" id="editCompanyForm">
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label for="edit_company_name" class="form-label">Company Name *</label>
+                            <input type="text" class="form-control" id="edit_company_name" name="company_name" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="edit_contact_person" class="form-label">Contact Person</label>
+                            <input type="text" class="form-control" id="edit_contact_person" name="contact_person">
+                        </div>
+                        <div class="mb-3">
+                            <label for="edit_company_email" class="form-label">Email</label>
+                            <input type="email" class="form-control" id="edit_company_email" name="company_email">
+                        </div>
+                        <div class="mb-3">
+                            <label for="edit_company_phone" class="form-label">Phone</label>
+                            <input type="tel" class="form-control" id="edit_company_phone" name="company_phone">
+                        </div>
+                        <div class="mb-3">
+                            <label for="edit_company_address" class="form-label">Address</label>
+                            <textarea class="form-control" id="edit_company_address" name="company_address" rows="3"></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Update Company</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function editCompany(id, name, contact, email, phone, address) {
+            document.getElementById('editCompanyForm').action = `/admin/companies/${id}/update`;
+            document.getElementById('edit_company_name').value = name;
+            document.getElementById('edit_contact_person').value = contact;
+            document.getElementById('edit_company_email').value = email;
+            document.getElementById('edit_company_phone').value = phone;
+            document.getElementById('edit_company_address').value = address;
+            
+            const editModal = new bootstrap.Modal(document.getElementById('editCompanyModal'));
+            editModal.show();
+        }
+    </script>
+</body>
+</html>
+
