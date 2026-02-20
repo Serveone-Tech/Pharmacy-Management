@@ -39,12 +39,12 @@ router.post(
       // Verify password using password from user object
       const isValidPassword = await User.verifyPassword(
         password,
-        user.password
+        user.password,
       );
       console.log(password);
       console.log(isValidPassword);
       if (!isValidPassword) {
-        req.flash("error_msg", "Invalid34 email or password");
+        req.flash("error_msg", "Invalid email or password");
         return res.redirect("/auth/login");
       }
 
@@ -67,11 +67,11 @@ router.post(
       console.error("Login error:", error);
       req.flash(
         "error_msg",
-        "An error occurred during login. Please try again."
+        "An error occurred during login. Please try again.",
       );
       res.redirect("/auth/login");
     }
-  }
+  },
 );
 
 // Logout
@@ -119,7 +119,7 @@ router.post(
         // Don't reveal if email exists or not for security
         req.flash(
           "success_msg",
-          "If an account with that email exists, password recovery instructions have been sent."
+          "If an account with that email exists, password recovery instructions have been sent.",
         );
         return res.redirect("/auth/login");
       }
@@ -128,7 +128,7 @@ router.post(
       // For now, just show success message
       req.flash(
         "success_msg",
-        "Password recovery instructions have been sent to your email address."
+        "Password recovery instructions have been sent to your email address.",
       );
       res.redirect("/auth/login");
     } catch (error) {
@@ -136,7 +136,7 @@ router.post(
       req.flash("error_msg", "An error occurred. Please try again.");
       res.redirect("/auth/forgot-password");
     }
-  }
+  },
 );
 
 // Change password page (for authenticated users)
@@ -189,7 +189,7 @@ router.post(
       const { getOne } = require("../config/database");
       const userWithPassword = await getOne(
         "SELECT password FROM users WHERE id = ?",
-        [req.session.user.id]
+        [req.session.user.id],
       );
 
       if (!userWithPassword.success || !userWithPassword.data) {
@@ -200,7 +200,7 @@ router.post(
       // Verify current password
       const isValidPassword = await User.verifyPassword(
         current_password,
-        userWithPassword.data.password
+        userWithPassword.data.password,
       );
       if (!isValidPassword) {
         req.flash("error_msg", "Current password is incorrect");
@@ -229,7 +229,7 @@ router.post(
       req.flash("error_msg", "An error occurred. Please try again.");
       res.redirect("/auth/change-password");
     }
-  }
+  },
 );
 
 module.exports = router;

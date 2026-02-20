@@ -1,199 +1,171 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><%= title %></title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-</head>
-<body>
-    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
-        <div class="container-fluid">
-            <a class="navbar-brand" href="/admin/dashboard">
-                <i class="fas fa-pills me-2"></i>Pharmacy Management
-            </a>
-            <div class="navbar-nav ms-auto">
-                <span class="navbar-text me-3">Welcome, <%= user.full_name %></span>
-                <a class="nav-link" href="/auth/logout">
-                    <i class="fas fa-sign-out-alt"></i> Logout
-                </a>
-            </div>
-        </div>
-    </nav>
+<h2 class="mb-1">
+    <i class="fas fa-chart-bar me-2"></i> Sales Reports
+</h2>
+<p class="text-muted mb-4">
+    Generate and view sales reports
+</p>
 
-    <div class="container-fluid mt-4">
-        <div class="row">
-            <div class="col-md-12">
-                <!-- Flash Messages -->
-                <% if (success_msg && success_msg.length > 0) { %>
-                    <div class="alert alert-success alert-dismissible fade show" role="alert">
-                        <%= success_msg %>
-                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                    </div>
-                <% } %>
+<!-- Flash Messages -->
+<% if (success_msg && success_msg.length > 0) { %>
+    <div class="alert alert-success alert-dismissible fade show">
+        <%= success_msg %>
+        <button class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+<% } %>
 
-                <% if (error_msg && error_msg.length > 0) { %>
-                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                        <%= error_msg %>
-                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                    </div>
-                <% } %>
+<% if (error_msg && error_msg.length > 0) { %>
+    <div class="alert alert-danger alert-dismissible fade show">
+        <%= error_msg %>
+        <button class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+<% } %>
 
-                <h2><i class="fas fa-chart-bar me-2"></i>Sales Reports</h2>
-                <p class="text-muted">Generate and view sales reports</p>
+<!-- FILTER FORM -->
+<div class="card mb-4">
+    <div class="card-header">
+        <i class="fas fa-filter me-2"></i> Report Filters
+    </div>
 
-                <!-- Filter Form -->
-                <div class="card mb-4">
-                    <div class="card-header">
-                        <h5><i class="fas fa-filter me-2"></i>Report Filters</h5>
-                    </div>
-                    <div class="card-body">
-                        <form method="GET" action="/admin/reports">
-                            <div class="row">
-                                <div class="col-md-3">
-                                    <div class="mb-3">
-                                        <label for="date_from" class="form-label">From Date</label>
-                                        <input type="date" class="form-control" id="date_from" name="date_from" 
-                                               value="<%= filters.date_from || '' %>">
-                                    </div>
-                                </div>
-                                <div class="col-md-3">
-                                    <div class="mb-3">
-                                        <label for="date_to" class="form-label">To Date</label>
-                                        <input type="date" class="form-control" id="date_to" name="date_to" 
-                                               value="<%= filters.date_to || '' %>">
-                                    </div>
-                                </div>
-                                <div class="col-md-3">
-                                    <div class="mb-3">
-                                        <label for="pharmacist_id" class="form-label">Pharmacist</label>
-                                        <select class="form-select" id="pharmacist_id" name="pharmacist_id">
-                                            <option value="">All Pharmacists</option>
-                                            <% pharmacists.forEach(pharmacist => { %>
-                                                <option value="<%= pharmacist.id %>" 
-                                                        <%= filters.pharmacist_id == pharmacist.id ? 'selected' : '' %>>
-                                                    <%= pharmacist.full_name %>
-                                                </option>
-                                            <% }); %>
-                                        </select>
-                                    </div>
-                                </div>
-                                <div class="col-md-3">
-                                    <div class="mb-3">
-                                        <label class="form-label">&nbsp;</label>
-                                        <div class="d-grid">
-                                            <button type="submit" class="btn btn-primary">
-                                                <i class="fas fa-chart-line me-2"></i>Generate Report
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </form>
-                    </div>
+    <div class="card-body">
+        <form method="GET" action="/admin/reports">
+            <div class="row">
+                <div class="col-md-3 mb-3">
+                    <label class="form-label">From Date</label>
+                    <input
+                        type="date"
+                        class="form-control"
+                        name="date_from"
+                        value="<%= filters.date_from || '' %>"
+                    >
                 </div>
 
-                <% if (filters.date_from && filters.date_to) { %>
-                    <!-- Summary Cards -->
-                    <div class="row mb-4">
-                        <div class="col-md-4">
-                            <div class="card bg-primary text-white">
-                                <div class="card-body">
-                                    <div class="d-flex justify-content-between">
-                                        <div>
-                                            <h4><%= totalStats.total_invoices %></h4>
-                                            <p class="mb-0">Total Invoices</p>
-                                        </div>
-                                        <div class="align-self-center">
-                                            <i class="fas fa-file-invoice fa-2x"></i>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="card bg-success text-white">
-                                <div class="card-body">
-                                    <div class="d-flex justify-content-between">
-                                        <div>
-                                            <h4>₹<%= totalStats.total_sales.toFixed(2) %></h4>
-                                            <p class="mb-0">Total Sales</p>
-                                        </div>
-                                        <div class="align-self-center">
-                                            <i class="fas fa-rupee-sign fa-2x"></i>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="card bg-info text-white">
-                                <div class="card-body">
-                                    <div class="d-flex justify-content-between">
-                                        <div>
-                                            <h4>₹<%= totalStats.average_sale.toFixed(2) %></h4>
-                                            <p class="mb-0">Average Sale</p>
-                                        </div>
-                                        <div class="align-self-center">
-                                            <i class="fas fa-chart-line fa-2x"></i>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                <div class="col-md-3 mb-3">
+                    <label class="form-label">To Date</label>
+                    <input
+                        type="date"
+                        class="form-control"
+                        name="date_to"
+                        value="<%= filters.date_to || '' %>"
+                    >
+                </div>
 
-                    <!-- Daily Sales Report -->
-                    <div class="card">
-                        <div class="card-header">
-                            <h5><i class="fas fa-calendar-alt me-2"></i>Daily Sales Report</h5>
-                        </div>
-                        <div class="card-body">
-                            <div class="table-responsive">
-                                <table class="table table-striped">
-                                    <thead>
-                                        <tr>
-                                            <th>Date</th>
-                                            <th>Total Invoices</th>
-                                            <th>Total Sales</th>
-                                            <th>Average Sale</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <% if (salesData.length > 0) { %>
-                                            <% salesData.forEach(day => { %>
-                                                <tr>
-                                                    <td><%= new Date(day.sale_date).toLocaleDateString() %></td>
-                                                    <td><%= day.total_invoices %></td>
-                                                    <td><strong>₹<%= day.total_sales.toFixed(2) %></strong></td>
-                                                    <td>₹<%= (day.total_sales / day.total_invoices).toFixed(2) %></td>
-                                                </tr>
-                                            <% }); %>
-                                        <% } else { %>
-                                            <tr>
-                                                <td colspan="4" class="text-center text-muted">No sales data found for the selected period</td>
-                                            </tr>
-                                        <% } %>
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-                <% } else { %>
-                    <div class="card">
-                        <div class="card-body text-center">
-                            <i class="fas fa-chart-bar fa-3x text-muted mb-3"></i>
-                            <h5>Select Date Range to Generate Report</h5>
-                            <p class="text-muted">Please select a date range and optionally a pharmacist to generate sales reports.</p>
-                        </div>
-                    </div>
-                <% } %>
+                <div class="col-md-3 mb-3">
+                    <label class="form-label">Pharmacist</label>
+                    <select class="form-select" name="pharmacist_id">
+                        <option value="">All Pharmacists</option>
+                        <% pharmacists.forEach(pharmacist => { %>
+                            <option
+                                value="<%= pharmacist.id %>"
+                                <%= filters.pharmacist_id == pharmacist.id ? 'selected' : '' %>
+                            >
+                                <%= pharmacist.full_name %>
+                            </option>
+                        <% }); %>
+                    </select>
+                </div>
+
+                <div class="col-md-3 mb-3 d-flex align-items-end">
+                    <button class="btn btn-primary w-100">
+                        <i class="fas fa-chart-line me-2"></i> Generate Report
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<% if (filters.date_from && filters.date_to) { %>
+
+<!-- SUMMARY CARDS -->
+<div class="row mb-4">
+    <div class="col-md-4">
+        <div class="card bg-primary text-white">
+            <div class="card-body d-flex justify-content-between">
+                <div>
+                    <h4><%= totalStats.total_invoices %></h4>
+                    <p class="mb-0">Total Invoices</p>
+                </div>
+                <i class="fas fa-file-invoice fa-2x"></i>
             </div>
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
-</body>
-</html>
+    <div class="col-md-4">
+        <div class="card bg-success text-white">
+            <div class="card-body d-flex justify-content-between">
+                <div>
+                    <h4>₹<%= totalStats.total_sales.toFixed(2) %></h4>
+                    <p class="mb-0">Total Sales</p>
+                </div>
+                <i class="fas fa-rupee-sign fa-2x"></i>
+            </div>
+        </div>
+    </div>
 
+    <div class="col-md-4">
+        <div class="card bg-info text-white">
+            <div class="card-body d-flex justify-content-between">
+                <div>
+                    <h4>₹<%= totalStats.average_sale.toFixed(2) %></h4>
+                    <p class="mb-0">Average Sale</p>
+                </div>
+                <i class="fas fa-chart-line fa-2x"></i>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- DAILY SALES TABLE -->
+<div class="card">
+    <div class="card-header">
+        <i class="fas fa-calendar-alt me-2"></i> Daily Sales Report
+    </div>
+
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Total Invoices</th>
+                        <th>Total Sales</th>
+                        <th>Average Sale</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% if (salesData.length > 0) { %>
+                        <% salesData.forEach(day => { %>
+                            <tr>
+                                <td><%= new Date(day.sale_date).toLocaleDateString() %></td>
+                                <td><%= day.total_invoices %></td>
+                                <td><strong>₹<%= day.total_sales.toFixed(2) %></strong></td>
+                                <td>₹<%= (day.total_sales / day.total_invoices).toFixed(2) %></td>
+                            </tr>
+                        <% }); %>
+                    <% } else { %>
+                        <tr>
+                            <td colspan="4" class="text-center text-muted">
+                                No sales data found for selected period
+                            </td>
+                        </tr>
+                    <% } %>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<% } else { %>
+
+<!-- EMPTY STATE -->
+<div class="card">
+    <div class="card-body text-center">
+        <i class="fas fa-chart-bar fa-3x text-muted mb-3"></i>
+        <h5>Select Date Range</h5>
+        <p class="text-muted">
+            Choose a date range (and pharmacist) to generate sales reports
+        </p>
+    </div>
+</div>
+
+<% } %>

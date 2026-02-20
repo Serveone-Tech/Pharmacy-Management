@@ -142,7 +142,7 @@
                                                             <i class="fas fa-eye"></i>
                                                         </a>
                                                         <button class="btn btn-sm btn-outline-success" 
-                                                                onclick="printInvoice(<%= invoice.id %>)" 
+                                                                onclick="printInvoice('<%= invoice.id %>')" 
                                                                 title="Print">
                                                             <i class="fas fa-print"></i>
                                                         </button>
@@ -186,26 +186,39 @@
                         </div>
                     </div>
                     <div class="col-md-4">
-                        <div class="card bg-success text-white">
-                            <div class="card-body text-center">
-                                <h4>₹<%= Number(invoices.reduce((sum, inv) => sum + inv.final_amount, 0)).toFixed(2) %></h4>
-                                <p class="mb-0">Total Value</p>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-4">
-                        <div class="card bg-info text-white">
-                            <div class="card-body text-center">
-                                <h4>₹<%= Number((invoices.reduce((sum, inv) => sum + inv.final_amount, 0) / invoices.length)).toFixed(2) %></h4>
-                                <p class="mb-0">Average Value</p>
-                            </div>
-                        </div>
-                    </div>
+    <div class="card bg-success text-white">
+        <div class="card-body text-center">
+            <h4>
+                ₹<%= invoices.length 
+                    ? invoices.reduce((sum, inv) => sum + Number(inv.final_amount || 0), 0).toFixed(2) 
+                    : "0.00" %>
+            </h4>
+            <p class="mb-0">Total Value</p>
+        </div>
+    </div>
+</div>
+
+<div class="col-md-4">
+    <div class="card bg-info text-white">
+        <div class="card-body text-center">
+            <h4>
+                ₹<%= invoices.length 
+                    ? (
+                        invoices.reduce((sum, inv) => sum + Number(inv.final_amount || 0), 0)
+                        / invoices.length
+                      ).toFixed(2)
+                    : "0.00" %>
+            </h4>
+            <p class="mb-0">Average Value</p>
+        </div>
+    </div>
+</div>
+
                 </div>
                 <% } %>
 
                 <!-- Quick Actions -->
-                <div class="row mt-4">
+                <!-- <div class="row mt-4">
                     <div class="col-md-12">
                         <div class="card">
                             <div class="card-header">
@@ -241,7 +254,7 @@
                             </div>
                         </div>
                     </div>
-                </div>
+                </div> -->
             </div>
         </div>
     </div>
